@@ -1,19 +1,100 @@
-// @ts-check
-import { test, expect } from '@playwright/test';
+// tests/saucedemo.spec.js
+const { test, expect } = require('@playwright/test');
+const { SaucePages } = require('../pages/saucePages.js'); // Uses the POM from previous step
+const data = require('../utils/testData.js');
 
-test('has title', async ({ page }) => {
-  await page.goto('https://playwright.dev/');
+test.describe('SauceDemo 150 Test Suite', () => {
 
-  // Expect a title "to contain" a substring.
-  await expect(page).toHaveTitle(/Playwright/);
-});
+    // 1. Login Module (30 Cases)
+    data.loginScenarios.forEach(scenario => {
+        test(`${scenario.id}: Login Test - ${scenario.type}`, async ({ page }) => {
+            const sauce = new SaucePages(page);
+            await sauce.navigate();
+            await sauce.login(scenario.user, scenario.pass);
+            if (scenario.type === 'positive') {
+                await expect(page).toHaveURL(/inventory.html/);
+            } else {
+                await expect(sauce.errorMsg).toBeVisible();
+            }
+        });
+    });
 
-test('get started link', async ({ page }) => {
-  await page.goto('https://playwright.dev/');
+    // 2. Inventory & Sorting (30 Cases)
+    data.inventoryScenarios.forEach(scenario => {
+        test(`${scenario.id}: Sort Inventory by ${scenario.sort}`, async ({ page }) => {
+            const sauce = new SaucePages(page);
+            await sauce.navigate();
+            await sauce.login('standard_user', 'secret_sauce');
+            await sauce.sortContainer.selectOption(scenario.sort);
+            await expect(sauce.inventoryList.first()).toBeVisible();
+        });
+    });
 
-  // Click the get started link.
-  await page.getByRole('link', { name: 'Get started' }).click();
+    // 3. Product Details (20 Cases)
+    data.productDetailsScenarios.forEach(scenario => {
+        test(`${scenario.id}: View Product Detail ${scenario.itemIndex}`, async ({ page }) => {
+            const sauce = new SaucePages(page);
+            await sauce.navigate();
+            await sauce.login('standard_user', 'secret_sauce');
+            await sauce.inventoryList.nth(scenario.itemIndex).locator('.inventory_item_name').click();
+            await expect(page).toHaveURL(/inventory-item.html/);
+        });
+    });
 
-  // Expects page to have a heading with the name of Installation.
-  await expect(page.getByRole('heading', { name: 'Installation' })).toBeVisible();
+    // 4. Cart Management (30 Cases)
+    data.cartScenarios.forEach(scenario => {
+        test(`${scenario.id}: Cart Action - ${scenario.action}`, async ({ page }) => {
+            const sauce = new SaucePages(page);
+            await sauce.navigate();
+            await sauce.login('standard_user', 'secret_sauce');
+            const btn = page.locator('.btn_inventory').first();
+            if (scenario.action === 'add') {
+                await btn.click();
+                await expect(sauce.cartBadge).toBeVisible();
+            } else {
+                await btn.click(); // Add first
+                await btn.click(); // Then Remove
+                await expect(sauce.cartBadge).not.toBeVisible();
+            }
+        });
+    });
+
+    // 5. Checkout Validations (30 Cases)
+    data.checkoutScenarios.forEach(scenario => {
+        test(`${scenario.id}: Checkout Form Validation`, async ({ page }) => {
+            const sauce = new SaucePages(page);
+            await sauce.navigate();
+            await sauce.login('standard_user', 'secret_sauce');
+            await sauce.cartBtn.click();
+            await sauce.checkoutBtn.click();
+            await sauce.firstName.fill(scenario.fName);
+            await sauce.lastName.fill(scenario.lName);
+            await sauce.zipCode.fill(scenario.zip);
+            await sauce.continueBtn.click();
+            
+            if (scenario.fName && scenario.lName && scenario.zip) {
+                await expect(page).toHaveURL(/checkout-step-two.html/);
+            } else {
+                await expect(sauce.errorMsg).toBeVisible();
+            }
+        });
+    });
+
+    // 6. End-to-End & Sidebar (10 Cases)
+    data.e2eScenarios.forEach(scenario => {
+        test(`${scenario.id}: E2E Full Purchase Flow`, async ({ page }) => {
+            const sauce = new SaucePages(page);
+            await sauce.navigate();
+            await sauce.login('standard_user', 'secret_sauce');
+            await page.locator('[data-test="add-to-cart-sauce-labs-backpack"]').click();
+            await sauce.cartBtn.click();
+            await sauce.checkoutBtn.click();
+            await sauce.firstName.fill('Tester');
+            await sauce.lastName.fill('User');
+            await sauce.zipCode.fill('12345');
+            await sauce.continueBtn.click();
+            await sauce.finishBtn.click();
+            await expect(sauce.completeHeader).toHaveText('Thank you for your order!');
+        });
+    });
 });
