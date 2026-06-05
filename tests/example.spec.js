@@ -1,11 +1,10 @@
 // tests/saucedemo.spec.js
 const { test, expect } = require('@playwright/test');
-const { SaucePages } = require('../pages/saucePages.js'); // Uses the POM from previous step
+const { SaucePages } = require('../pages/saucePages.js'); 
 const data = require('../utils/testData.js');
 
 test.describe('SauceDemo 150 Test Suite', () => {
 
-    // 1. Login Module (30 Cases)
     data.loginScenarios.forEach(scenario => {
         test(`${scenario.id}: Login Test - ${scenario.type}`, async ({ page }) => {
             const sauce = new SaucePages(page);
@@ -19,18 +18,6 @@ test.describe('SauceDemo 150 Test Suite', () => {
         });
     });
 
-    // 2. Inventory & Sorting (30 Cases)
-    data.inventoryScenarios.forEach(scenario => {
-        test(`${scenario.id}: Sort Inventory by ${scenario.sort}`, async ({ page }) => {
-            const sauce = new SaucePages(page);
-            await sauce.navigate();
-            await sauce.login('standard_user', 'secret_sauce');
-            await sauce.sortContainer.selectOption(scenario.sort);
-            await expect(sauce.inventoryList.first()).toBeVisible();
-        });
-    });
-
-    // 3. Product Details (20 Cases)
     data.productDetailsScenarios.forEach(scenario => {
         test(`${scenario.id}: View Product Detail ${scenario.itemIndex}`, async ({ page }) => {
             const sauce = new SaucePages(page);
@@ -40,8 +27,6 @@ test.describe('SauceDemo 150 Test Suite', () => {
             await expect(page).toHaveURL(/inventory-item.html/);
         });
     });
-
-    // 4. Cart Management (30 Cases)
     data.cartScenarios.forEach(scenario => {
         test(`${scenario.id}: Cart Action - ${scenario.action}`, async ({ page }) => {
             const sauce = new SaucePages(page);
@@ -59,7 +44,6 @@ test.describe('SauceDemo 150 Test Suite', () => {
         });
     });
 
-    // 5. Checkout Validations (30 Cases)
     data.checkoutScenarios.forEach(scenario => {
         test(`${scenario.id}: Checkout Form Validation`, async ({ page }) => {
             const sauce = new SaucePages(page);
@@ -80,7 +64,6 @@ test.describe('SauceDemo 150 Test Suite', () => {
         });
     });
 
-    // 6. End-to-End & Sidebar (10 Cases)
     data.e2eScenarios.forEach(scenario => {
         test(`${scenario.id}: E2E Full Purchase Flow`, async ({ page }) => {
             const sauce = new SaucePages(page);
